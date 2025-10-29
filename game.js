@@ -284,7 +284,10 @@ function gameLoop() {
 }
 
 // Game control functions
-function startGame() {
+async function startGame() {
+    // Ensure audio is unlocked first
+    await unlockAudio();
+    
     gameState = 'playing';
     score = 0;
     frameCount = 0;
@@ -304,7 +307,14 @@ function startGame() {
     
     // Play game music
     gameMusic.currentTime = 0; // Reset to start
-    gameMusic.play().catch(e => console.log('Audio play failed:', e));
+    const playPromise = gameMusic.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(e => {
+            console.log('Audio play failed:', e);
+            // Try again after a short delay
+            setTimeout(() => gameMusic.play().catch(err => console.log('Retry failed:', err)), 100);
+        });
+    }
     
     console.log('Game started! Bird position:', bird.x, bird.y);
     console.log('Score reset to:', score);
@@ -341,12 +351,12 @@ function endGame() {
 }
 
 // Input handlers
-function handleInput() {
+async function handleInput() {
     // Unlock audio on first interaction
-    unlockAudio();
+    await unlockAudio();
     
     if (gameState === 'start') {
-        startGame();
+        await startGame();
     } else if (gameState === 'playing') {
         bird.jump();
     }
