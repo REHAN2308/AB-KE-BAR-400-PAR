@@ -32,6 +32,22 @@ const gameOverMusic = new Audio('waha modi.mp3');
 gameOverMusic.loop = false; // Play once when game ends
 gameOverMusic.volume = 0.9; // Set volume to 90%
 
+// Audio unlock flag for mobile browsers
+let audioUnlocked = false;
+
+// Function to unlock audio on first user interaction
+function unlockAudio() {
+    if (!audioUnlocked) {
+        // Play and immediately pause to unlock audio context
+        gameMusic.play().then(() => {
+            gameMusic.pause();
+            gameMusic.currentTime = 0;
+            audioUnlocked = true;
+            console.log('Audio unlocked!');
+        }).catch(e => console.log('Audio unlock failed:', e));
+    }
+}
+
 // Set canvas size
 function resizeCanvas() {
     const maxWidth = 480;
@@ -313,6 +329,9 @@ function endGame() {
 
 // Input handlers
 function handleInput() {
+    // Unlock audio on first interaction
+    unlockAudio();
+    
     if (gameState === 'start') {
         startGame();
     } else if (gameState === 'playing') {
@@ -337,11 +356,13 @@ startScreen.addEventListener('click', handleInput);
 
 restartButton.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    unlockAudio(); // Unlock audio before restarting
     startGame();
 });
 
 restartButton.addEventListener('click', (e) => {
     e.preventDefault();
+    unlockAudio(); // Unlock audio before restarting
     startGame();
 });
 
