@@ -26,13 +26,11 @@ let imagesLoaded = false;
 // Audio
 const gameMusic = new Audio('bird flying.mp3');
 gameMusic.loop = true; // Loop the music during gameplay
-gameMusic.volume = 0.9; // Set volume to 90%
-gameMusic.preload = 'auto'; // Preload audio
+gameMusic.volume = 0.9; // Set volume to 50%
 
 const gameOverMusic = new Audio('waha modi.mp3');
 gameOverMusic.loop = false; // Play once when game ends
 gameOverMusic.volume = 0.9; // Set volume to 90%
-gameOverMusic.preload = 'auto'; // Preload audio
 
 // Audio unlock flag for mobile browsers
 let audioUnlocked = false;
@@ -40,27 +38,25 @@ let audioUnlocked = false;
 // Function to unlock audio on first user interaction
 async function unlockAudio() {
     if (!audioUnlocked) {
-        console.log('Attempting to unlock audio...');
-        try {
-            // Try to play and pause both audio files
-            await gameMusic.play();
-            gameMusic.pause();
-            gameMusic.currentTime = 0;
+        console.log('Unlocking audio...');
+        // Play and immediately pause both audio files to unlock audio context
+        const unlockPromises = [
+            gameMusic.play().then(() => {
+                gameMusic.pause();
+                gameMusic.currentTime = 0;
+            }).catch(e => console.log('Game music unlock failed:', e)),
             
-            await gameOverMusic.play();
-            gameOverMusic.pause();
-            gameOverMusic.currentTime = 0;
-            
-            audioUnlocked = true;
-            console.log('Audio unlocked successfully!');
-        } catch (e) {
-            console.log('Audio unlock error:', e);
-            // Even if it fails, mark as attempted
-            audioUnlocked = true;
-        }
+            gameOverMusic.play().then(() => {
+                gameOverMusic.pause();
+                gameOverMusic.currentTime = 0;
+            }).catch(e => console.log('Game over music unlock failed:', e))
+        ];
+        
+        await Promise.all(unlockPromises);
+        audioUnlocked = true;
+        console.log('All audio unlocked successfully!');
     }
 }
-
 // Set canvas size
 function resizeCanvas() {
     const maxWidth = 480;
@@ -284,10 +280,7 @@ function gameLoop() {
 }
 
 // Game control functions
-async function startGame() {
-    // Ensure audio is unlocked first
-    await unlockAudio();
-    
+function startGame() {
     gameState = 'playing';
     score = 0;
     frameCount = 0;
@@ -307,14 +300,7 @@ async function startGame() {
     
     // Play game music
     gameMusic.currentTime = 0; // Reset to start
-    const playPromise = gameMusic.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(e => {
-            console.log('Audio play failed:', e);
-            // Try again after a short delay
-            setTimeout(() => gameMusic.play().catch(err => console.log('Retry failed:', err)), 100);
-        });
-    }
+    gameMusic.play().catch(e => console.log('Audio play failed:', e));
     
     console.log('Game started! Bird position:', bird.x, bird.y);
     console.log('Score reset to:', score);
@@ -352,11 +338,15 @@ function endGame() {
 
 // Input handlers
 async function handleInput() {
-    // Unlock audio on first interaction
-    await unlockAudio();
+    // Unlock audio on first interaction and wait for it to complete
+    if (!audioUnlocked) {
+        await unlockAudio();
+        // Small delay to ensure audio context is fully ready on mobile
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
     
     if (gameState === 'start') {
-        await startGame();
+        startGame();
     } else if (gameState === 'playing') {
         bird.jump();
     }
