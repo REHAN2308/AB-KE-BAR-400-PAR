@@ -280,7 +280,13 @@ function gameLoop() {
 }
 
 // Game control functions
-function startGame() {
+async function startGame() {
+    // Ensure audio is unlocked before starting
+    if (!audioUnlocked) {
+        await unlockAudio();
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
     gameState = 'playing';
     score = 0;
     frameCount = 0;
@@ -300,7 +306,11 @@ function startGame() {
     
     // Play game music
     gameMusic.currentTime = 0; // Reset to start
-    gameMusic.play().catch(e => console.log('Audio play failed:', e));
+    gameMusic.play().catch(e => {
+        console.log('Audio play failed:', e);
+        // If play fails, try unlocking again
+        audioUnlocked = false;
+    });
     
     console.log('Game started! Bird position:', bird.x, bird.y);
     console.log('Score reset to:', score);
@@ -367,16 +377,16 @@ startScreen.addEventListener('touchstart', (e) => {
 
 startScreen.addEventListener('click', handleInput);
 
-restartButton.addEventListener('touchstart', (e) => {
+restartButton.addEventListener('touchstart', async (e) => {
     e.preventDefault();
-    unlockAudio(); // Unlock audio before restarting
-    startGame();
+    await unlockAudio(); // Unlock audio before restarting
+    await startGame();
 });
 
-restartButton.addEventListener('click', (e) => {
+restartButton.addEventListener('click', async (e) => {
     e.preventDefault();
-    unlockAudio(); // Unlock audio before restarting
-    startGame();
+    await unlockAudio(); // Unlock audio before restarting
+    await startGame();
 });
 
 // Keyboard support (for desktop testing)
