@@ -26,25 +26,38 @@ let imagesLoaded = false;
 // Audio
 const gameMusic = new Audio('bird flying.mp3');
 gameMusic.loop = true; // Loop the music during gameplay
-gameMusic.volume = 0.9; // Set volume to 50%
+gameMusic.volume = 0.9; // Set volume to 90%
+gameMusic.preload = 'auto'; // Preload audio
 
 const gameOverMusic = new Audio('waha modi.mp3');
 gameOverMusic.loop = false; // Play once when game ends
 gameOverMusic.volume = 0.9; // Set volume to 90%
+gameOverMusic.preload = 'auto'; // Preload audio
 
 // Audio unlock flag for mobile browsers
 let audioUnlocked = false;
 
 // Function to unlock audio on first user interaction
-function unlockAudio() {
+async function unlockAudio() {
     if (!audioUnlocked) {
-        // Play and immediately pause to unlock audio context
-        gameMusic.play().then(() => {
+        console.log('Attempting to unlock audio...');
+        try {
+            // Try to play and pause both audio files
+            await gameMusic.play();
             gameMusic.pause();
             gameMusic.currentTime = 0;
+            
+            await gameOverMusic.play();
+            gameOverMusic.pause();
+            gameOverMusic.currentTime = 0;
+            
             audioUnlocked = true;
-            console.log('Audio unlocked!');
-        }).catch(e => console.log('Audio unlock failed:', e));
+            console.log('Audio unlocked successfully!');
+        } catch (e) {
+            console.log('Audio unlock error:', e);
+            // Even if it fails, mark as attempted
+            audioUnlocked = true;
+        }
     }
 }
 
